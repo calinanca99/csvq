@@ -1,6 +1,7 @@
 use std::fmt::Write;
 use std::{fs::File, io::Read};
 
+use anyhow::bail;
 use clap::{Parser, Subcommand};
 
 #[derive(Subcommand)]
@@ -19,15 +20,20 @@ struct Cli {
     command: Commands,
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
         Commands::View { path, rows } => {
             let mut buf = String::new();
-            let mut file = File::open(path).expect("No file found");
+            let mut file = match File::open(path) {
+                Ok(f) => f,
+                Err(_) => {
+                    bail!("No such file or directory")
+                }
+            };
 
-            file.read_to_string(&mut buf).expect("Cannot read the file");
+            file.read_to_string(&mut buf)?;
 
             let rows = rows.unwrap_or(5);
 
@@ -36,11 +42,13 @@ fn main() {
                 .skip(1)
                 .take(rows)
                 .fold(String::new(), |mut acc, l| {
-                    writeln!(acc, "{}", l).expect("Cannot write to result");
+                    writeln!(acc, "{}", l).unwrap();
                     acc
                 });
 
             println!("{res}");
         }
     }
+
+    Ok(())
 }
