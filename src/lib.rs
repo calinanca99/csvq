@@ -1,14 +1,12 @@
-use std::{fmt::Write, fs::File, io::Read};
+use std::{fs::File, io::Read};
 
 use anyhow::bail;
 use cli::Command;
 
 mod cli;
+mod commands;
 
 pub use crate::cli::Cli;
-
-const DEFAULT_NUMBER_OF_ROWS: usize = 5;
-const SEPARATOR: &str = ",";
 
 pub fn run(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
@@ -22,17 +20,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
                 Err(_) => bail!("No such file or directory"),
             };
 
-            let rows_to_skip = if column_names { 0 } else { 1 };
-
-            let res = file
-                .lines()
-                .skip(rows_to_skip)
-                .take(rows.unwrap_or(DEFAULT_NUMBER_OF_ROWS))
-                .fold(String::new(), |mut acc, l| {
-                    writeln!(acc, "{}", l).unwrap();
-                    acc
-                });
-
+            let res = commands::view(file, rows, column_names);
             println!("{res}");
         }
         Command::Filter {
@@ -45,31 +33,8 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
                 Ok(f) => f,
                 Err(_) => bail!("No such file or directory"),
             };
-            let separator = separator.unwrap_or(SEPARATOR.to_string());
 
-            // TODO: Look for solutions that don't involve calling `lines()`
-            let col_idx = match file.lines().next() {
-                Some(columns) => {
-                    match columns
-                        .split(&separator)
-                        .enumerate()
-                        .find(|(_, col)| *col == column)
-                    {
-                        Some((idx, _)) => idx,
-                        None => bail!("Column does not exist"),
-                    }
-                }
-                None => bail!("The file is empty"),
-            };
-
-            let res = file
-                .lines()
-                .filter(|row| row.split(&separator).nth(col_idx).unwrap() == equals)
-                .fold(String::new(), |mut acc, l| {
-                    writeln!(acc, "{}", l).unwrap();
-                    acc
-                });
-
+            let res = commands::filter(file, column, equals, separator)?;
             println!("{res}");
         }
     }
@@ -81,6 +46,7 @@ fn read_file(path: &str) -> std::io::Result<String> {
     let mut buf = String::new();
     let mut file = File::open(path)?;
 
-    file.read_to_string(&mut buf)?;
+    file.read_to_string(&mut buf)
+        .expect("Cannot read from the file");
     Ok(buf)
 }
