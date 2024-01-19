@@ -18,9 +18,9 @@ pub enum Command {
         path: String,
         #[arg(short, long)]
         column: String,
-        #[arg(long)]
+        #[arg(short, long)]
         equals: String,
-        #[arg(long)]
+        #[arg(short, long)]
         separator: Option<String>,
     },
 }
