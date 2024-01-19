@@ -33,17 +33,19 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
             path,
             column,
             equals,
+            separator,
         } => {
             let file = match read_file(&path) {
                 Ok(f) => f,
                 Err(_) => bail!("No such file or directory"),
             };
+            let separator = separator.unwrap_or(SEPARATOR.to_string());
 
             // TODO: Look for solutions that don't involve calling `lines()`
             let col_idx = match file.lines().next() {
                 Some(columns) => {
                     match columns
-                        .split(SEPARATOR)
+                        .split(&separator)
                         .enumerate()
                         .find(|(_, col)| *col == column)
                     {
@@ -56,7 +58,7 @@ pub fn run(cli: Cli) -> anyhow::Result<()> {
 
             let res = file
                 .lines()
-                .filter(|row| row.split(SEPARATOR).nth(col_idx).unwrap() == equals)
+                .filter(|row| row.split(&separator).nth(col_idx).unwrap() == equals)
                 .fold(String::new(), |mut acc, l| {
                     writeln!(acc, "{}", l).unwrap();
                     acc

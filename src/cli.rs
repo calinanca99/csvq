@@ -20,5 +20,7 @@ pub enum Command {
         column: String,
         #[arg(long)]
         equals: String,
+        #[arg(long)]
+        separator: Option<String>,
     },
 }
