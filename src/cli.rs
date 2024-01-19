@@ -13,6 +13,8 @@ pub enum Command {
         path: String,
         #[arg(short, long)]
         rows: Option<usize>,
+        #[arg(long)]
+        column_names: bool,
     },
     Filter {
         path: String,

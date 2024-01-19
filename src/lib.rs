@@ -12,15 +12,21 @@ const SEPARATOR: &str = ",";
 
 pub fn run(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
-        Command::View { path, rows } => {
+        Command::View {
+            path,
+            rows,
+            column_names,
+        } => {
             let file = match read_file(&path) {
                 Ok(f) => f,
                 Err(_) => bail!("No such file or directory"),
             };
 
+            let rows_to_skip = if column_names { 0 } else { 1 };
+
             let res = file
                 .lines()
-                .skip(1)
+                .skip(rows_to_skip)
                 .take(rows.unwrap_or(DEFAULT_NUMBER_OF_ROWS))
                 .fold(String::new(), |mut acc, l| {
                     writeln!(acc, "{}", l).unwrap();
